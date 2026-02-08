@@ -1,10 +1,11 @@
 <?php
 
-abstract class Model
+class Database
 {
-    private static $bdd;
+    private static $instance = null;
+    private $pdo;
 
-    private static function setBdd()
+    private function __construct()
     {
         $host = getenv('DB_HOST') ?: 'localhost';
         $dbname = getenv('DB_NAME') ?: 'internships';
@@ -12,7 +13,7 @@ abstract class Model
         $password = getenv('DB_PASSWORD') ?: '';
 
         try {
-            self::$bdd = new PDO(
+            $this->pdo = new PDO(
                 "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
                 $user,
                 $password,
@@ -27,10 +28,19 @@ abstract class Model
         }
     }
 
-    protected function getBdd()
+    public static function getInstance()
     {
-        if (self::$bdd == null)
-            self::setBdd();
-        return self::$bdd;
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
+
+    public function getConnection()
+    {
+        return $this->pdo;
+    }
+
+    private function __clone() {}
+    public function __wakeup() {}
 }
