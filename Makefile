@@ -13,31 +13,31 @@ help:
 	@echo "  make rebuild   - Rebuild complet"
 
 build:
-	docker-compose build
+	docker compose build
 
 up:
-	docker-compose up -d
+	docker compose up -d
 
 down:
-	docker-compose down
+	docker compose down
 
 restart:
-	docker-compose restart
+	docker compose restart
 
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 shell:
-	docker-compose exec web bash
+	docker compose exec web bash
 
 db-shell:
-	docker-compose exec db mysql -uroot -proot_password internships
+	docker compose exec db mysql -uroot -proot_password internships
 
 clean:
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 rebuild:
-	docker-compose down
-	docker-compose build --no-cache
-	docker-compose up -d
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
