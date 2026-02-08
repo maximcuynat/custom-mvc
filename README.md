@@ -1,12 +1,13 @@
-# Projet MVC PHP avec Docker
+# Projet MVC PHP avec Docker + ORM Active Record
 
-Architecture MVC en PHP avec Docker, MySQL et Adminer.
+Architecture MVC en PHP avec Docker, MySQL, Adminer et ORM Active Record custom.
 
 ## Stack Technique
 
 - **PHP 8.2** avec Apache
 - **MySQL 8.0**
 - **Adminer** (interface web pour MySQL)
+- **ORM Active Record** custom (style Laravel Eloquent)
 - **Docker & Docker Compose**
 
 ## Prérequis
@@ -17,23 +18,33 @@ Architecture MVC en PHP avec Docker, MySQL et Adminer.
 ## Structure du Projet
 
 ```
-.
-├── app/
-│   ├── controllers/
-│   │   ├── Router.php
-│   │   └── ControllerHome.php
-│   ├── models/
-│   │   └── Model.php
-│   ├── views/
-│   │   ├── View.php
-│   │   ├── template.php
-│   │   ├── viewAccueil.php
-│   │   └── viewError.php
-│   ├── .htaccess
-│   └── index.php
+projet-mvc/
 ├── docker-compose.yml
 ├── Dockerfile
-└── init.sql
+├── init.sql
+├── Makefile
+├── .env.example
+├── .gitignore
+├── README.md
+│
+└── app/
+    ├── .htaccess
+    ├── index.php
+    │
+    ├── controllers/
+    │   ├── Router.php
+    │   └── ControllerHome.php
+    │
+    ├── models/
+    │   ├── Database.php       # Singleton PDO
+    │   ├── ActiveRecord.php   # ORM Base
+    │   └── User.php           # Modèle User
+    │
+    └── views/
+        ├── View.php
+        ├── template.php
+        ├── viewHome.php
+        └── viewError.php
 ```
 
 ## Installation et Lancement
@@ -51,16 +62,21 @@ cd <nom-projet>
 docker-compose up -d --build
 ```
 
+Ou avec Make :
+
+```bash
+make build
+make up
+```
+
 Cette commande :
-- Build l'image PHP avec Apache
+- Build l'image PHP avec Apache + PDO MySQL
 - Lance MySQL
 - Lance Adminer
 - Crée le réseau bridge
 - Initialise la BDD avec `init.sql`
 
 ### 3. Vérifier que tout fonctionne
-
-Attendre quelques secondes que MySQL soit complètement démarré, puis :
 
 ```bash
 docker-compose ps
@@ -76,62 +92,18 @@ Tous les services doivent être "Up".
 | **Adminer** | http://localhost:8080 | Serveur: `db`<br>User: `root`<br>Password: `root_password`<br>BDD: `internships` |
 | **MySQL** (direct) | localhost:3306 | User: `root`<br>Password: `root_password` |
 
-## Commandes Utiles
-
-### Démarrer les conteneurs
+## Commandes Make
 
 ```bash
-docker-compose up -d
-```
-
-### Arrêter les conteneurs
-
-```bash
-docker-compose down
-```
-
-### Arrêter et supprimer les volumes (⚠️ efface la BDD)
-
-```bash
-docker-compose down -v
-```
-
-### Voir les logs
-
-```bash
-docker-compose logs -f
-docker-compose logs -f web
-docker-compose logs -f db
-```
-
-### Reconstruire après modification du Dockerfile
-
-```bash
-docker-compose up -d --build
-```
-
-### Accéder au shell du conteneur web
-
-```bash
-docker-compose exec web bash
-```
-
-### Accéder au shell MySQL
-
-```bash
-docker-compose exec db mysql -uroot -proot_password internships
-```
-
-### Importer un dump SQL
-
-```bash
-docker-compose exec -T db mysql -uroot -proot_password internships < dump.sql
-```
-
-### Exporter la BDD
-
-```bash
-docker-compose exec db mysqldump -uroot -proot_password internships > dump.sql
+make build      # Build les images
+make up         # Démarre les conteneurs
+make down       # Arrête les conteneurs
+make restart    # Redémarre
+make logs       # Affiche les logs
+make shell      # Shell dans le conteneur web
+make db-shell   # Shell MySQL
+make clean      # Supprime tout (⚠️ efface la BDD)
+make rebuild    # Rebuild complet
 ```
 
 ## Architecture MVC
@@ -140,14 +112,17 @@ docker-compose exec db mysqldump -uroot -proot_password internships > dump.sql
 
 Le fichier `.htaccess` redirige toutes les requêtes vers `index.php` qui instancie le `Router`.
 
-**Exemples d'URLs** :
+**URLs** :
 - `/` → redirige vers `/home`
 - `/home` → `ControllerHome::home()`
-- `/user/profile/123` → `ControllerUser::profile($url)` avec `$url = ['user', 'profile', '123']`
+- `/user/profile/123` → `ControllerUser::profile($url)`
 
 ### Contrôleur
 
 ```php
+<?php
+require_once('views/View.php');
+
 class ControllerExample
 {
     private $_view;
@@ -168,20 +143,6 @@ class ControllerExample
 }
 ```
 
-### Modèle
-
-```php
-class ExampleModel extends Model
-{
-    public function getData()
-    {
-        $req = $this->getBdd()->prepare('SELECT * FROM table');
-        $req->execute();
-        return $req->fetchAll();
-    }
-}
-```
-
 ### Vue
 
 Créer `views/viewExample.php` :
@@ -193,24 +154,177 @@ Créer `views/viewExample.php` :
 </div>
 ```
 
+## ORM Active Record
+
+### Créer un Modèle
+
+```php
+<?php
+require_once('ActiveRecord.php');
+
+class Post extends ActiveRecord
+{
+    protected static $table = 'posts';
+}
+```
+
+Le nom de table est auto-déduit si non spécifié :
+- `User` → `users`
+- `Post` → `posts`
+
+### Utilisation de l'ORM
+
+#### Récupération
+
+```php
+// Tous les utilisateurs
+$users = User::all();
+
+// Par ID
+$user = User::find(1);
+
+// Par ID ou exception
+$user = User::findOrFail(1);
+
+// Premier
+$user = User::first();
+
+// WHERE
+$admins = User::where('username', '=', 'admin');
+$admins = User::where('username', 'admin'); // = par défaut
+
+// Compter
+$count = User::count();
+```
+
+#### Création
+
+```php
+// Méthode 1
+$user = new User();
+$user->username = 'john';
+$user->setPassword('secret');
+$user->save();
+
+// Méthode 2
+$user = User::create([
+    'username' => 'john',
+    'password' => password_hash('secret', PASSWORD_BCRYPT)
+]);
+```
+
+#### Mise à jour
+
+```php
+$user = User::find(1);
+$user->username = 'nouveau_nom';
+$user->save();
+```
+
+#### Suppression
+
+```php
+// Méthode 1
+$user = User::find(1);
+$user->delete();
+
+// Méthode 2
+User::destroy(1);
+```
+
+### Modèle User - Méthodes Spécifiques
+
+```php
+// Hasher un mot de passe
+$user->setPassword('plain_password');
+
+// Vérifier un mot de passe
+if ($user->verifyPassword('plain_password')) {
+    echo "OK";
+}
+
+// Trouver par username
+$user = User::findByUsername('admin');
+
+// Authentifier
+$user = User::authenticate('admin', 'password');
+if ($user) {
+    echo "Connecté : " . $user->username;
+}
+```
+
+### Utilitaires
+
+```php
+$user = User::find(1);
+
+// Vérifier si modifié
+$user->isDirty(); // bool
+
+// Valeurs originales
+$original = $user->getOriginal();
+
+// Rafraîchir depuis la BDD
+$user->refresh();
+
+// Convertir
+$array = $user->toArray();
+$json = $user->toJson();
+```
+
 ## Base de Données
 
-La BDD est initialisée automatiquement avec `init.sql` au premier lancement.
+### Tables
 
-### Tables créées
+La BDD est initialisée avec `init.sql` :
 
-- `users` : utilisateurs de l'application
-- `internships` : stages
+```sql
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ### Données de test
 
-2 utilisateurs et 2 stages sont insérés automatiquement.
+- Username: `admin` / Password: `password`
+- Username: `user1` / Password: `password`
 
-Mot de passe par défaut (hashé) : `password`
+## Exemple Complet d'Utilisation
+
+```php
+<?php
+// Dans un contrôleur
+
+require_once('models/User.php');
+
+// Lister tous les utilisateurs
+$users = User::all();
+
+// Authentifier
+$user = User::authenticate('admin', 'password');
+if ($user) {
+    $_SESSION['user_id'] = $user->id;
+    $_SESSION['username'] = $user->username;
+}
+
+// Créer un utilisateur
+$newUser = User::create([
+    'username' => 'john_doe',
+    'password' => password_hash('secret123', PASSWORD_BCRYPT)
+]);
+
+// Modifier
+$user = User::find(1);
+$user->username = 'admin_updated';
+$user->save();
+```
 
 ## Variables d'Environnement
 
-Les variables sont définies dans `docker-compose.yml` :
+Définies dans `docker-compose.yml` :
 
 ```yaml
 environment:
@@ -220,47 +334,61 @@ environment:
   - DB_PASSWORD=root_password
 ```
 
-Modifie-les selon tes besoins.
+## Développement
+
+Les modifications dans `./app` sont synchronisées en temps réel.
+
+Pas besoin de rebuild pour les changements PHP.
 
 ## Troubleshooting
 
 ### L'app ne se connecte pas à la BDD
 
-Vérifie que MySQL est bien démarré :
-
 ```bash
 docker-compose logs db
 ```
 
-Attends le message `ready for connections`.
+Attends `ready for connections`.
 
 ### Port déjà utilisé
 
-Si les ports 8000, 8080 ou 3306 sont occupés, modifie-les dans `docker-compose.yml` :
+Modifie dans `docker-compose.yml` :
 
 ```yaml
 ports:
-  - "8001:80"  # au lieu de 8000:80
+  - "8001:80"
 ```
 
-### Réinitialiser complètement le projet
+### Réinitialiser
 
 ```bash
 docker-compose down -v
 docker-compose up -d --build
 ```
 
-## Développement
+Ou :
 
-Les modifications dans `./app` sont synchronisées en temps réel grâce au volume.
-
-Pas besoin de rebuild pour les changements PHP.
+```bash
+make clean
+make rebuild
+```
 
 ## Sécurité
 
 ⚠️ **En production** :
 - Change les mots de passe MySQL
-- Utilise des variables d'environnement externes (fichier `.env`)
+- Utilise un fichier `.env` externe
 - Active HTTPS
-- Configure un reverse proxy (Nginx/Traefik)
+- Configure un reverse proxy
 - Limite l'accès à Adminer
+- Utilise des variables d'environnement pour les secrets
+
+## Extensions ORM Futures
+
+- Relations (hasMany, belongsTo, belongsToMany)
+- Query Builder chainable avancé
+- Scopes (local et global)
+- Events (creating, created, etc.)
+- Soft Deletes
+- Pagination
+- Eager Loading
