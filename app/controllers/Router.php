@@ -17,7 +17,6 @@ class Router
             $url = '';
 
             if (isset($_GET['url'])) {
-                // Get url
                 $url = explode('/', filter_var($_GET['url'], FILTER_SANITIZE_URL));
 
                 $controller = ucfirst(strtolower($url[0]));
@@ -27,14 +26,16 @@ class Router
                 if (file_exists($controllerFile)) {
                     require_once($controllerFile);
                     $this->_ctrl = new $controllerClass($url);
-                }
-                else
+                } else {
                     throw new Exception('Page introuvable');
+                }
             } else {
                 require_once('controllers/ControllerHome.php');
-                $this->_ctrl = new ControllerHome($url);
+                $this->_ctrl = new ControllerHome(array('home'));
             }
         } catch (Exception $e) {
+            $this->_view = new View('Error');
+            $this->_view->generate('Erreur', array('errorMsg' => $e->getMessage()));
         }
     }
 }

@@ -12,15 +12,15 @@ class View
 
     public function generate($title, $data)
     {
+        $this->_title = $title;
         $content = $this->generateFile($this->_file, $data);
         $view = $this->generateFile(
-            'view/template.php',
+            'views/template.php',
             array(
                 'title' => $this->_title,
-                'content' =>$content,
+                'content' => $content,
             )
         );
-        // Affichage de la vue
         echo $view;
     }
 
@@ -31,7 +31,8 @@ class View
             ob_start();
             require $file;
             return ob_get_clean();
-        } else
+        } else {
             throw new Exception('Fichier ' . $file . ' introuvable');
+        }
     }
 }
