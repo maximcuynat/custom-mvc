@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Si l'utilisateur est à la racine "/", redirige vers /home
+RewriteRule ^$ /home [R=302,L]
+
+# Si la requête n'est pas un fichier ou un dossier
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirige tout le reste vers index.php avec paramètre url
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
