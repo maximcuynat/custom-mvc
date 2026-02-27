@@ -1,6 +1,7 @@
 <?php
 
 require_once('Database.php');
+require_once('QueryBuilder.php');
 
 abstract class ActiveRecord
 {
@@ -20,13 +21,25 @@ abstract class ActiveRecord
         }
     }
 
-    protected static function getTable()
+    protected static function getTable(): string
     {
         if (isset(static::$table)) {
             return static::$table;
         }
-        $class = strtolower((new \ReflectionClass(static::class))->getShortName());
-        return $class . 's';
+        return static::pluralize(
+            strtolower((new \ReflectionClass(static::class))->getShortName())
+        );
+    }
+
+    private static function pluralize(string $word): string
+    {
+        if (preg_match('/[^aeiou]y$/i', $word)) {
+            return substr($word, 0, -1) . 'ies';   // category → categories
+        }
+        if (preg_match('/(s|x|z|ch|sh)$/i', $word)) {
+            return $word . 'es';                    // class → classes
+        }
+        return $word . 's';                         // user → users
     }
 
     protected static function db()
@@ -89,21 +102,10 @@ abstract class ActiveRecord
         return $result;
     }
 
-    public static function where($column, $operator, $value = null)
+    public static function where(string $column, $operator, $value = null): QueryBuilder
     {
-        if ($value === null) {
-            $value = $operator;
-            $operator = '=';
-        }
-        
-        $table = static::getTable();
-        $stmt = static::db()->prepare("SELECT * FROM {$table} WHERE {$column} {$operator} ?");
-        $stmt->execute([$value]);
-        $results = $stmt->fetchAll();
-        
-        return array_map(function($row) {
-            return new static($row);
-        }, $results);
+        return (new QueryBuilder(static::class, static::getTable()))
+            ->where($column, $operator, $value);
     }
 
     public static function first()

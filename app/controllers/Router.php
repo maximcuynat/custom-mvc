@@ -1,41 +1,31 @@
 <?php
 
-require_once("views/View.php");
-
 class Router
 {
-    private $_ctrl;
-    private $_view;
-
     public function routeReq()
     {
         try {
-            spl_autoload_register(function ($class) {
-                require_once('models/' . $class . '.php');
-            });
+            $url = isset($_GET['url']) ? filter_var($_GET['url'], FILTER_SANITIZE_URL) : 'home';
+            $segments = explode('/', trim($url, '/'));
 
-            $url = '';
+            $controllerName = 'Controller' . ucfirst(strtolower($segments[0]));
+            $method = (isset($segments[1]) && $segments[1] !== '') ? strtolower($segments[1]) : 'index';
+            $params = array_slice($segments, 2);
 
-            if (isset($_GET['url'])) {
-                $url = explode('/', filter_var($_GET['url'], FILTER_SANITIZE_URL));
-
-                $controller = ucfirst(strtolower($url[0]));
-                $controllerClass = 'Controller' . $controller;
-                $controllerFile  = 'controllers/' . $controllerClass . '.php';
-
-                if (file_exists($controllerFile)) {
-                    require_once($controllerFile);
-                    $this->_ctrl = new $controllerClass($url);
-                } else {
-                    throw new Exception('Page introuvable');
-                }
-            } else {
-                require_once('controllers/ControllerHome.php');
-                $this->_ctrl = new ControllerHome(array('home'));
+            if (!class_exists($controllerName)) {
+                throw new Exception('Page introuvable');
             }
+
+            $controller = new $controllerName();
+
+            if (!method_exists($controller, $method)) {
+                throw new Exception('Page introuvable');
+            }
+
+            $controller->$method($params);
         } catch (Exception $e) {
-            $this->_view = new View('Error');
-            $this->_view->generate('Erreur', array('errorMsg' => $e->getMessage()));
+            $view = new View('Error');
+            $view->generate('Erreur', ['errorMsg' => $e->getMessage()]);
         }
     }
 }
