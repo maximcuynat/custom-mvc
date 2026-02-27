@@ -1,8 +1,5 @@
 <?php
 
-require_once('Database.php');
-require_once('QueryBuilder.php');
-
 abstract class ActiveRecord
 {
     protected static $table;

@@ -3,7 +3,11 @@
 define('URL', str_replace("index.php", "home", (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]"));
 
 spl_autoload_register(function ($class) {
-    $dirs = ['controllers/', 'models/', 'views/'];
+    $dirs = [
+        __DIR__ . '/controllers/',
+        __DIR__ . '/models/',
+        __DIR__ . '/views/',
+    ];
     foreach ($dirs as $dir) {
         $file = $dir . $class . '.php';
         if (file_exists($file)) {

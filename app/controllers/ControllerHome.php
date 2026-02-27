@@ -1,10 +1,9 @@
 <?php
 
-class ControllerHome
+class ControllerHome extends Controller
 {
-    public function index(array $params = [])
+    public function index(array $params = []): void
     {
-        $view = new View('Home');
-        $view->generate('Home', []);
+        $this->render('Home', 'Home');
     }
 }

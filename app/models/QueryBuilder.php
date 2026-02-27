@@ -1,7 +1,5 @@
 <?php
 
-require_once('Database.php');
-
 class QueryBuilder
 {
     private string $model;

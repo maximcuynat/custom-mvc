@@ -1,7 +1,5 @@
 <?php
 
-require_once('ActiveRecord.php');
-
 class User extends ActiveRecord
 {
     protected static $table = 'users';
