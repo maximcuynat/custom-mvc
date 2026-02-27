@@ -19,8 +19,7 @@ class User extends ActiveRecord
 
     public static function findByUsername($username)
     {
-        $users = static::where('username', '=', $username);
-        return !empty($users) ? $users[0] : null;
+        return static::where('username', '=', $username)->first();
     }
 
     public static function authenticate($username, $password)
