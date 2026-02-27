@@ -2,20 +2,7 @@
 
 define('URL', str_replace("index.php", "home", (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]"));
 
-spl_autoload_register(function ($class) {
-    $dirs = [
-        __DIR__ . '/controllers/',
-        __DIR__ . '/models/',
-        __DIR__ . '/views/',
-    ];
-    foreach ($dirs as $dir) {
-        $file = $dir . $class . '.php';
-        if (file_exists($file)) {
-            require_once $file;
-            return;
-        }
-    }
-});
+require_once __DIR__ . '/../vendor/autoload.php';
 
 $router = new Router();
 $router->routeReq();

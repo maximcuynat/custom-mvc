@@ -13,17 +13,17 @@ class Router
             $params = array_slice($segments, 2);
 
             if (!class_exists($controllerName)) {
-                throw new Exception('Page introuvable');
+                throw new \Exception('Page introuvable');
             }
 
             $controller = new $controllerName();
 
             if (!method_exists($controller, $method)) {
-                throw new Exception('Page introuvable');
+                throw new \Exception('Page introuvable');
             }
 
             $controller->$method($params);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $view = new View('Error');
             $view->generate('Erreur', ['errorMsg' => $e->getMessage()]);
         }

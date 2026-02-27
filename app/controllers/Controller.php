@@ -24,6 +24,6 @@ abstract class Controller
 
     protected function abort(string $message = 'Page introuvable'): void
     {
-        throw new Exception($message);
+        throw new \Exception($message);
     }
 }

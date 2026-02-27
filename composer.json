@@ -1,0 +1,12 @@
+{
+    "require": {
+        "php": ">=8.0"
+    },
+    "autoload": {
+        "classmap": [
+            "app/controllers/",
+            "app/models/",
+            "app/views/"
+        ]
+    }
+}
