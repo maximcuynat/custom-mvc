@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Models;
+
 class Database
 {
     private static $instance = null;

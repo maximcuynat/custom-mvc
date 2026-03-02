@@ -1,11 +1,16 @@
 <?php
 
+namespace App\Controllers;
+
+use App\Views\View;
+use App\Security\Csrf;
+
 abstract class Controller
 {
-    protected function render(string $viewName, string $title, array $data = []): void
+    protected function render(string $viewName, array $data = []): void
     {
-        $view = new View($viewName);
-        $view->generate($title, $data);
+        $view = new View();
+        $view->render($viewName, $data);
     }
 
     protected function redirect(string $url): void
@@ -25,5 +30,18 @@ abstract class Controller
     protected function abort(string $message = 'Page introuvable'): void
     {
         throw new \Exception($message);
+    }
+
+    protected function csrfField(): string
+    {
+        return Csrf::field();
+    }
+
+    protected function verifyCsrf(): void
+    {
+        $token = $_POST['_csrf'] ?? '';
+        if (!Csrf::validate($token)) {
+            $this->abort('Token CSRF invalide');
+        }
     }
 }

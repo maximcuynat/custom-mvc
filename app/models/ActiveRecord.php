@@ -1,10 +1,13 @@
 <?php
 
+namespace App\Models;
+
 abstract class ActiveRecord
 {
     protected static $table;
     protected static $primaryKey = 'id';
-    
+    protected static bool $timestamps = true;
+
     protected $attributes = [];
     protected $original = [];
     protected $exists = false;
@@ -133,24 +136,28 @@ abstract class ActiveRecord
     {
         $table = static::getTable();
         $attributes = $this->attributes;
-        
-        if (in_array('created_at', array_keys($attributes)) && !$attributes['created_at']) {
-            $attributes['created_at'] = date('Y-m-d H:i:s');
+
+        if (static::$timestamps) {
+            $now = date('Y-m-d H:i:s');
+            $attributes['created_at'] = $attributes['created_at'] ?? $now;
+            $attributes['updated_at'] = $attributes['updated_at'] ?? $now;
         }
-        
+
         $columns = array_keys($attributes);
         $placeholders = array_fill(0, count($columns), '?');
-        
+
         $sql = "INSERT INTO {$table} (" . implode(', ', $columns) . ") 
                 VALUES (" . implode(', ', $placeholders) . ")";
-        
+
         $stmt = static::db()->prepare($sql);
         $stmt->execute(array_values($attributes));
-        
+
         $this->attributes[static::$primaryKey] = static::db()->lastInsertId();
+        $this->attributes['created_at'] = $attributes['created_at'] ?? null;
+        $this->attributes['updated_at'] = $attributes['updated_at'] ?? null;
         $this->exists = true;
         $this->original = $this->attributes;
-        
+
         return $this;
     }
 
@@ -159,24 +166,29 @@ abstract class ActiveRecord
         $table = static::getTable();
         $pk = static::$primaryKey;
         $attributes = $this->attributes;
-        
+
         unset($attributes[$pk]);
-        
+
+        if (static::$timestamps) {
+            $attributes['updated_at'] = date('Y-m-d H:i:s');
+        }
+
         $setClause = [];
         foreach (array_keys($attributes) as $column) {
             $setClause[] = "{$column} = ?";
         }
-        
+
         $sql = "UPDATE {$table} SET " . implode(', ', $setClause) . " WHERE {$pk} = ?";
-        
+
         $values = array_values($attributes);
         $values[] = $this->attributes[$pk];
-        
+
         $stmt = static::db()->prepare($sql);
         $stmt->execute($values);
-        
+
+        $this->attributes = array_merge($this->attributes, $attributes);
         $this->original = $this->attributes;
-        
+
         return $this;
     }
 
