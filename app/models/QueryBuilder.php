@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Models;
+
 class QueryBuilder
 {
     private string $model;
