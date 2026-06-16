@@ -3,3 +3,5 @@
 *.log
 vendor/
 node_modules/
+.idea/
+.claude/
