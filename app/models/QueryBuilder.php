@@ -31,7 +31,11 @@ class QueryBuilder
 
         $operator = strtoupper($operator);
         if (!in_array($operator, self::$allowedOperators, true)) {
-            throw new InvalidArgumentException("Operator '{$operator}' is not allowed.");
+            throw new \InvalidArgumentException("Operator '{$operator}' is not allowed.");
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_.]+$/', $column)) {
+            throw new \InvalidArgumentException("Invalid column name '{$column}'.");
         }
 
         $this->wheres[]   = "{$column} {$operator} ?";
@@ -42,6 +46,10 @@ class QueryBuilder
 
     public function orderBy(string $column, string $direction = 'ASC'): self
     {
+        if (!preg_match('/^[a-zA-Z0-9_.]+$/', $column)) {
+            throw new \InvalidArgumentException("Invalid column name '{$column}'.");
+        }
+
         $direction      = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
         $this->orderBys[] = "{$column} {$direction}";
 

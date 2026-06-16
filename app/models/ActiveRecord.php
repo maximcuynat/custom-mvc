@@ -97,7 +97,7 @@ abstract class ActiveRecord
     {
         $result = static::find($id);
         if (!$result) {
-            throw new Exception(static::class . " with ID {$id} not found");
+            throw new \Exception(static::class . " with ID {$id} not found");
         }
         return $result;
     }
@@ -195,7 +195,7 @@ abstract class ActiveRecord
     public function delete()
     {
         if (!$this->exists) {
-            throw new Exception("Cannot delete a model that doesn't exist");
+            throw new \Exception("Cannot delete a model that doesn't exist");
         }
         
         $table = static::getTable();
@@ -220,7 +220,8 @@ abstract class ActiveRecord
 
     public static function create(array $attributes)
     {
-        $model = new static($attributes);
+        $model = new static();
+        $model->fill($attributes);
         $model->save();
         return $model;
     }
@@ -248,7 +249,7 @@ abstract class ActiveRecord
     public function refresh()
     {
         if (!$this->exists) {
-            throw new Exception("Cannot refresh a model that doesn't exist");
+            throw new \Exception("Cannot refresh a model that doesn't exist");
         }
         
         $fresh = static::find($this->attributes[static::$primaryKey]);

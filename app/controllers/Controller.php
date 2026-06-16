@@ -43,5 +43,6 @@ abstract class Controller
         if (!Csrf::validate($token)) {
             $this->abort('Token CSRF invalide');
         }
+        Csrf::regenerate();
     }
 }

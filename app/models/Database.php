@@ -25,8 +25,8 @@ class Database
                     PDO::ATTR_EMULATE_PREPARES => false
                 ]
             );
-        } catch (PDOException $e) {
-            throw new Exception("Erreur de connexion à la base de données : " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new \Exception("Erreur de connexion à la base de données : " . $e->getMessage());
         }
     }
 
